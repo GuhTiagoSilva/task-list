@@ -1,6 +1,7 @@
 package com.example.listadetarefasoficial.activity;
 
 import android.content.ContentValues;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 
@@ -12,6 +13,7 @@ import com.example.listadetarefasoficial.helper.TaskDAO;
 import com.example.listadetarefasoficial.model.Task;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.DividerItemDecoration;
@@ -33,6 +35,7 @@ public class MainActivity extends AppCompatActivity {
     private RecyclerView recyclerTasks;
     private AdapterTasks tasks;
     private List<Task> taskList = new ArrayList<>();
+    private Task selectedTask;
 
 
     @Override
@@ -43,6 +46,49 @@ public class MainActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
 
         recyclerTasks = findViewById(R.id.recyclerTasks);
+
+        recyclerTasks.addOnItemTouchListener(new RecyclerItemClickListener(getApplicationContext(), recyclerTasks, new RecyclerItemClickListener.OnItemClickListener() {
+            @Override
+            public void onItemClick(View view, int position) {
+                Task selectedTask = taskList.get(position);
+                Intent i = new Intent (MainActivity.this, AddTaskActivity.class);
+                i.putExtra("selectedTask", selectedTask);
+                startActivity(i);
+            }
+
+            @Override
+            public void onLongItemClick(View view, int position) {
+
+                selectedTask = taskList.get(position);
+
+
+                AlertDialog.Builder alertDialog = new AlertDialog.Builder(MainActivity.this);
+                alertDialog.setTitle("Alerta");
+                alertDialog.setMessage("Deseja realmente excluir a tarefa:  " + selectedTask.getTaskDescription() + " ? ");
+                alertDialog.setPositiveButton("Sim", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        TaskDAO taskDAO = new TaskDAO(getApplicationContext());
+                        if(taskDAO.remove(selectedTask)){
+                            loadTasksList();
+                            Toast.makeText(getApplicationContext(), "Sucesso ao excluir a tarefa ", Toast.LENGTH_SHORT).show();
+                        }else{
+                            Toast.makeText(getApplicationContext(), "Erro ao excluir tarefa", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                });
+
+                alertDialog.setNegativeButton("Não",null);
+
+                alertDialog.create();
+                alertDialog.show();
+            }
+
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+
+            }
+        }));
 
 
         FloatingActionButton fab = findViewById(R.id.fab);
